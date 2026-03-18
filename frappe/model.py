@@ -267,7 +267,7 @@ class model:
                 raise ValueError(f'Profile for {kind} is not set.')
 
 
-    def _expansion_model( self, f_latents, obs, dryrun = False):
+    def _expansion_model( self, f_latents, obs, dryrun = False, output_tau = False):
         '''
         Generate the expansion model for a given observation.
         f_latents: dictionary of latent parameters
@@ -284,38 +284,44 @@ class model:
         k_abs_tot = 10**obs.log10_k_abs_tot_itp( (log10_a_max, q) )
         k_sca_eff_tot = 10**obs.log10_k_sca_eff_tot_itp( (log10_a_max, q) )
         
-        _I = f_I(obs._nu, self._incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot )
+        _I = f_I(obs._nu, self._incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot, output_tau )
 
 
-        if obs.kind == 'visibility':
+        if output_tau:
 
-            # Hankel transform
-            V = jnp.dot(obs.H, _I) / 1e-23 # Jy
+            return _I
+        
+        else:
 
-            if self._userdef_vis_model is not None:
-                V = self._userdef_vis_model( V, obs, f_latents )
+            if obs.kind == 'visibility':
 
-            if dryrun:
+                # Hankel transform
+                V = jnp.dot(obs.H, _I) / 1e-23 # Jy
 
-                return V, _I
+                if self._userdef_vis_model is not None:
+                    V = self._userdef_vis_model( V, obs, f_latents )
 
-            else:
+                if dryrun:
 
-                obs.V_model = V
+                    return V, _I
 
-        elif obs.kind == 'radialprofile':
+                else:
 
-            # Convolve with beam
-            I_convolved = jax_convolve( _I, obs._beam_kernel, mode='same' )
-            I_convolved_itp = jnp.interp(obs._r, self._r_GP, I_convolved)
+                    obs.V_model = V
 
-            if dryrun:
+            elif obs.kind == 'radialprofile':
 
-                return I_convolved_itp, _I
+                # Convolve with beam
+                I_convolved = jax_convolve( _I, obs._beam_kernel, mode='same' )
+                I_convolved_itp = jnp.interp(obs._r, self._r_GP, I_convolved)
 
-            else:
+                if dryrun:
 
-                obs.I_model = I_convolved_itp
+                    return I_convolved_itp, _I
+
+                else:
+
+                    obs.I_model = I_convolved_itp
             
 
     def _generate_model( self, f_latents ):
@@ -631,6 +637,38 @@ class model:
 
         return V_res, I_res
     
+    def calc_model_tau( self, parameters ):
+        """Compute model optical depths
+        """
+
+        f_latents = parameters
+
+
+        #if plot:
+        #   fig, axes = plt.subplots(  N_panels, 2 , figsize=(15, 5*N_panels) )
+
+        tau_res = {}
+        
+        
+        for band in self._bands:
+            
+            tau_res[band] = {}
+            
+            obs = self._observations[band]
+
+            for _obs in obs:
+
+                #DP = self.dp
+
+                #DP.debug_time['t0'].append( time.perf_counter() )
+
+                _tau_res = self._expansion_model( f_latents, _obs, dryrun=True, output_tau = True )
+
+
+
+                tau_res[band][_obs._name] = jnp.array(_tau_res)
+
+        return tau_res
 
     def _g_to_f( self, g_samples ):
 

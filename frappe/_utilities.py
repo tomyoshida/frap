@@ -143,7 +143,7 @@ def F(tau, omega):
     return  (A + B) / denom
 
 
-def f_I(nu, incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot):
+def f_I(nu, incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot, output_tau = False):
     '''
     Calculate the intensity I(nu) using radiative transfer with scattering.
     nu: jnp.ndarray or float, frequency in Hz
@@ -164,7 +164,11 @@ def f_I(nu, incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot):
     
     tau = ka * Sigma_d / jnp.cos(incl)
 
-    return B(nu, T) * (  1 - jnp.exp( -tau/(1-omega) ) + omega*F(tau, omega)  )
+    if output_tau:
+        return tau
+
+    else:
+        return B(nu, T) * (  1 - jnp.exp( -tau/(1-omega) ) + omega*F(tau, omega)  )
 
 
 def size_average_opacity( log10_a, log10_k_abs, log10_k_sca_eff, log10_a_max, log10_a_min, q):
