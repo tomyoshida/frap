@@ -1,8 +1,8 @@
-==============================
-Introduction - What is FRAPPE?
-==============================
+============================
+Introduction - What is FRAP?
+============================
 
-FRAPPE is a Python module for astronomical data analysis. On this page, we provide an overview of the tool.
+FRAP is a Python module for astronomical data analysis. On this page, we provide an overview of the tool.
 
 Background
 ==========
@@ -22,16 +22,16 @@ Both approaches have pros and cons: image-based analysis assumes minimal physics
 To reveal the nature of protoplanetary disks, we need an approach that balances these two methods. To this end, we have developed **FRAPPE**.
 
 
-What can FRAPPE do?
-===================
+What can FRAP do?
+=================
 
-With FRAPPE, you can directly retrieve dust properties from interferometric visibilities of protoplanetary disks. Its features can be summarized as follows:
+With FRAP, you can directly retrieve dust properties from interferometric visibilities of protoplanetary disks. Its features can be summarized as follows:
 
 + Visibility-based analysis
-    FRAPPE can process visibilities directly. You no longer need to worry about differences in beam size. This is especially advantageous when using lower frequencies, where better spatial resolution is more challenging. It also reduces uncertainties introduced by imaging.
+    FRAP can process visibilities directly. You no longer need to worry about differences in beam size. This is especially advantageous when using lower frequencies, where better spatial resolution is more challenging. It also reduces uncertainties introduced by imaging.
 
 + Flexible radial profiles with a Gaussian Process
-    FRAPPE assumes that the underlying physical parameters can be expressed as a sample path from a `Gaussian process <https://en.wikipedia.org/wiki/Gaussian_process>`_. This enables highly flexible modeling that is impossible with the forward-modeling approaches. 
+    FRAP assumes that the underlying physical parameters can be expressed as a sample path from a `Gaussian process <https://en.wikipedia.org/wiki/Gaussian_process>`_. This enables highly flexible modeling that is impossible with the forward-modeling approaches. 
 
 + Auto-differentiation with JAX
     We implemented almost all functions using the `JAX <https://docs.jax.dev/en/latest/index.html>`_ library. This makes end-to-end automatic differentiation possible. For example, each visibility datum can be automatically and analytically differentiated with respect to each physical parameter. This enables the use of modern Markov chain Monte Carlo (MCMC) methods such as Hamiltonian Monte Carlo. It allows sampling of highly correlated, high-dimensional parameter spaces using gradient information, which is not feasible with traditional MCMC.
@@ -40,7 +40,7 @@ With FRAPPE, you can directly retrieve dust properties from interferometric visi
     MCMC sampling and stochastic variational inference are implemented using the `numpyro <https://num.pyro.ai/en/stable/>`_ package, providing extensibility. 
 
 + Easy to use
-    FRAPPE is designed to be easy to use in day-to-day research. A few simple lines of Python are enough to obtain results.
+    FRAP is designed to be easy to use in day-to-day research. A few simple lines of Python are enough to obtain results.
 
 
 Tutorials
@@ -51,10 +51,4 @@ Tutorials
 
    tutorial_0
    tutorial_1
-
-
-What's this logo?
-=================
-
-The logo shown in the top left is `Shirokuma <https://en.wikipedia.org/wiki/Kakig%C5%8Dri#Shirokuma>`_, a type of frappe (more precisely, a shaved ice dessert) originated from Tenmonkan (which means an *astronomical observatory* in the Edo period), `Kagoshima <https://en.wikipedia.org/wiki/Kagoshima>`_, Japan.
 

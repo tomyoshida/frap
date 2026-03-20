@@ -9,6 +9,6 @@ We recommend installing in a virtual environment:
     
     python -m venv .venv
     source .venv/bin/activate
-    pip install git+https://github.com/tomyoshida/frappe.git
+    pip install git+https://github.com/tomyoshida/frap.git
 
 We'll upload it to PyPI potentially after publication.

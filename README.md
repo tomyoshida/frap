@@ -1,15 +1,15 @@
-# frappe
+# FRAP
 
-Do you have observational data of the dust continuum emission from a protoplanetary disk? Flexible Radial Analysis of ProtoPlanetary disk Emissions (FRAPPE) provides an easy-to-use tool to retrieve dust properties, such as the dust surface density distribution, in disks.
+Do you have observational data of the dust continuum emission from a protoplanetary disk? Flexible Radial Analysis of Protoplanetary disks (FRAP) provides an easy-to-use tool to retrieve dust properties, such as the dust surface density distribution, in disks.
 
-See our [documentation](https://astro-frappe.readthedocs.io/en/latest/index.html) for details!
+See our [documentation](https://astro-frap.readthedocs.io/en/latest/index.html) for details!
 
 ## Installation
 
 ```
 python -m venv .venv
 source .venv/bin/activate
-pip install git+https://github.com/tomyoshida/frappe.git
+pip install git+https://github.com/tomyoshida/frap.git
 ```
 
 ## Citation

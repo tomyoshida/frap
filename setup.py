@@ -3,10 +3,10 @@ from setuptools import setup
 
 
 setup(
-    name="frappe",
+    name="frap",
     version="0.0.1",
     author="tomyoshida",
     author_email="tomohiroyoshida.astro@gmail.com",
-    description="frappe",
-    package_dir={"": "frappe"}
+    description="frap",
+    package_dir={"": "frap"}
 )
