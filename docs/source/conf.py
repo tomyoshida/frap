@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'FRAPPE'
+project = 'FRAP'
 copyright = '2026, Tomohiro C. Yoshida'
 author = 'Tomohiro C. Yoshida'
 
@@ -32,7 +32,7 @@ extensions = [
 ]
 
 autoapi_type = 'python'
-autoapi_dirs = ['../../frappe'] 
+autoapi_dirs = ['../../frap'] 
 
 nbsphinx_execute = 'never'
 
