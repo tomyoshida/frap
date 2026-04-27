@@ -6,11 +6,20 @@ See our [documentation](https://frap.readthedocs.io/en/latest/index.html) for de
 
 ## Installation
 
+If you use [uv](https://docs.astral.sh/uv/) for the package manager:
+
 ```
-python -m venv .venv
-source .venv/bin/activate
+uv add git+https://github.com/tomyoshida/frap.git
+```
+
+or you can use pip:
+
+```
 pip install git+https://github.com/tomyoshida/frap.git
 ```
+
+We'll upload the code to PyPI soon!
+
 
 ## Citation
 
