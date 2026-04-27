@@ -73,10 +73,10 @@ def calc_kde( file, nskip = 100, r_grid_fac = 20, n_kde = 400, save = None ):
             y_grid = np.linspace(ymin, ymax, n_kde)
         
         full_samples = np.reshape(samples[key], (Nsample*Nchain, len(R)))
-        filtered_samples = full_samples[valid_indices]
+        
         
         # 4. 指定された間隔 (nskip2) で間引き
-        plot_samples = filtered_samples[::nskip, :]
+        plot_samples = full_samples[::nskip, :]
         
         
         f_sample_interp = interp1d(R, plot_samples, axis=1, kind='cubic')
