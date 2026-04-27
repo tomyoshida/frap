@@ -18,45 +18,43 @@ def calc_kde( file, nskip = 100, r_grid_fac = 20, n_kde = 400, save = None ):
     samples = data.sample['posterior_f']
 
 
-    _names = list(samples.keys())
+    keys = list(samples.keys())
 
     param_set = data.param_set
 
 
     ylims = []
     islog = []
-    keys = []
+    keys_true = []
 
 
     log_prefix = 'log10_'
-    for _name in _names:
+    for _key in keys:
 
-        if _name.startswith(log_prefix):
+        if _key.startswith(log_prefix):
 
-            name = _name[len(log_prefix):]
-            keys.append(name)
+            keys_true.append(_key[len(log_prefix):])
 
-            f_min = param_set[_name]['f_min']
-            f_max = param_set[_name]['f_max']
+            f_min = param_set[_key]['f_min']
+            f_max = param_set[_key]['f_max']
 
             ylims.append( (10**f_min, 10**f_max) )
 
             islog.append( True )
 
         else:
-
             
-            keys.append(_name)
+            keys_true.append(_key)
 
-            f_min = param_set[_name]['f_min']
-            f_max = param_set[_name]['f_max']
+            f_min = param_set[_key]['f_min']
+            f_max = param_set[_key]['f_max']
 
             ylims.append( (f_min, f_max) )
 
             islog.append( False )
 
 
-    Nchain,  Nsample, _ = np.shape( samples[_names[0]] )
+    Nchain,  Nsample, _ = np.shape( samples[keys[0]] )
 
 
     R_fine = np.linspace(R.min(), R.max(), len(R) * r_grid_fac)
@@ -98,7 +96,8 @@ def calc_kde( file, nskip = 100, r_grid_fac = 20, n_kde = 400, save = None ):
             
         kde_results['y_grids'][key] = y_grid
         kde_results['density_matrices'][key] = density_matrix_fine / density_matrix_fine.max(axis=0)
-
+        kde_results['key_true'][key] = keys_true[i]
+        kde_results['key'][key] = key
 
     if save:
         with open(save, 'wb') as f:
