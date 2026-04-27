@@ -20,7 +20,7 @@ def calc_kde( file, nskip = 100, r_grid_fac = 20, n_kde = 400, save = None ):
 
     _names = list(samples.keys())
 
-    param_set = data.sample['param_set']
+    param_set = data.param_set
 
 
     ylims = []
