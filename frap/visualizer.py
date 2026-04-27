@@ -56,7 +56,7 @@ def calc_kde( file, nskip = 100, r_grid_fac = 20, n_kde = 400, save = None ):
             islog.append( False )
 
 
-    Nchain,  Nsample, _ = np.shape( param_set[_names[0]] )
+    Nchain,  Nsample, _ = np.shape( samples[_names[0]] )
 
 
     R_fine = np.linspace(R.min(), R.max(), len(R) * r_grid_fac)
