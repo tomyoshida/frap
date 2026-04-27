@@ -837,7 +837,8 @@ class inference:
                                     sample = { 'prior_f': f_func_all,
                                                'prior_g': g_func_all,
                                             },
-                                    logP = { 'prior': None }
+                                    logP = { 'prior': None },
+                                    param_set = self.model._free_parameters
                                     )
         
 
@@ -1036,10 +1037,11 @@ class results:
         logP: dictionary of log probabilities
     '''
 
-    def __init__(self, r, sample, logP):
+    def __init__(self, r, sample, logP, param_set):
         self.r = r
         self.sample = sample
         self.logP = logP
+        self.param_set = param_set
 
 
 class plot:
