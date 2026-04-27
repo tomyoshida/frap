@@ -8,5 +8,5 @@ setup(
     author="tomyoshida",
     author_email="tomohiroyoshida.astro@gmail.com",
     description="frap",
-    package_dir={"": "frap"}
+    packages=["frap"]
 )
