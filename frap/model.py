@@ -923,7 +923,8 @@ class inference:
                                     sample = { 'MAP_g': map_estimates,
                                                'MAP_f': self.delta_medians,
                                             },
-                                    logP = { 'MAP': -loss }
+                                    logP = { 'MAP': -loss },
+                                    param_set = self.model._free_parameters
                                     )
 
         return self.svi_map_results
@@ -1021,7 +1022,10 @@ class inference:
                                                    'posterior_g': g_posterior_samples,
                                                  },
                                     logP = { 'warmup': warmup_logP,
-                                             'posterior': posterior_logP }
+                                             'posterior': posterior_logP },
+
+                                    param_set = self.model._free_parameters
+                                    
                                     )
         
         return self.mcmc_results
