@@ -1,7 +1,6 @@
 
 ###### Utiities #########
 
-from astroquery.linelists.cdms import CDMS
 import jax
 import jax.numpy as jnp
 import numpy as np
