@@ -18,8 +18,8 @@ There are two main approaches to retrieve the physical quantities of interest:
 2. Forward modeling
     We can calculate the visibilities by assuming parametric physical models. We can then search for parameter sets that best reproduce the observations. This approach is particularly powerful when the underlying physics is extremely complex and direct retrieval is difficult.
 
-Both approaches have pros and cons: image-based analysis assumes minimal physics but can make robust estimation difficult. Conversely, forward modeling can be biased by its own assumptions.
-To reveal the nature of protoplanetary disks, we need an approach that balances these two methods. To this end, we have developed **FRAPPE**.
+Both approaches have pros and cons: image-based analysis assumes minimal physics but can make robust estimation difficult. Conversely, forward modeling could be biased by its own assumptions.
+We need an approach that balances these two approaches. To this end, we have developed **FRAP**.
 
 
 What can FRAP do?
