@@ -126,6 +126,8 @@ def calc_hdi(kde_data, D):
     islog = kde_data['islog']
     ylims =  kde_data['ylims']
 
+    #keys_true = kde_data['key_true']
+
     res = {}
    
     for i, key in enumerate(keys):
@@ -174,6 +176,8 @@ def plot_kde(hdi_data):
     plt.rcParams['font.size'] = 18
     plt.rcParams['xtick.direction'] = 'in'
     plt.rcParams['ytick.direction'] = 'in'
+
+    plt.tight_layout()
     
     
     
@@ -204,18 +208,17 @@ def plot_kde(hdi_data):
         #ax.set_ylabel(labels[i])
         ax.set_xlim(1, hdi_data[key]['Rmax'] )
         ax.set_ylim(hdi_data[key]['ylims'])
+
+        ax.set_ylabel( key.removeprefix("log10_") )
         
         if hdi_data[key]['islog']: ax.set_yscale('log')
             
             
-        color_rl = 'k' 
-    
+        
     axes[2, 0].set_xlabel(r'$r\ {\rm (au)}$')
     
     
-    plt.tight_layout()
-    
-        
+    return axes
 
 
 
