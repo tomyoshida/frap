@@ -181,7 +181,7 @@ def plot_kde(hdi_data):
     
     
     
-    fig, axes = plt.subplots(len(keys), 1, figsize=(8, 12), sharex=True, sharey='row')
+    fig, axes = plt.subplots(len(keys), 1, figsize=(8, 4*len(keys)), sharex=True, sharey='row')
     plt.subplots_adjust(wspace=0.1, hspace=0.1)
     fig.align_ylabels(axes)
     
