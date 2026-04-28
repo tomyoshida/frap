@@ -25,7 +25,7 @@ Do you have observational data of the dust continuum emission from a protoplanet
 .. raw:: html
 
    <div style="text-align: center; font-style: italic; margin-top: 0px; margin-bottom: 20px;">
-      Animation of the posterior sampling process for dust surface density with FRAPPE.
+      Animation of the posterior sampling process for dust surface density with FRAP.
    </div>
 
 .. toctree::
@@ -45,4 +45,4 @@ Do you have observational data of the dust continuum emission from a protoplanet
 Contact
 -------
 
-`Tomohiro C. Yoshida <https://tomyoshida.github.io/>`_ (National Astronomical Observatory of Japan) / tomohiroyoshida.astro [at] gmail.com
+`Tomohiro C. Yoshida <https://tomyoshida.github.io/>`_ (Università degli Studi di Milano) / tomohiroyoshida.astro [at] gmail.com
