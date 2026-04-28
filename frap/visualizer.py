@@ -215,7 +215,7 @@ def plot_kde(hdi_data):
             
             
         
-    axes[2, 0].set_xlabel(r'$r\ {\rm (au)}$')
+    axes[-1, 0].set_xlabel(r'$r\ {\rm (au)}$')
     
     
     return axes
