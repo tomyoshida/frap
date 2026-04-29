@@ -3,7 +3,7 @@
 Installation
 ============
 
-We recommend installing in a virtual environment:
+We recommend installing FRAP in a virtual environment:
 
 .. code-block:: shell
     
@@ -11,4 +11,10 @@ We recommend installing in a virtual environment:
     source .venv/bin/activate
     pip install git+https://github.com/tomyoshida/frap.git
 
-We'll upload it to PyPI potentially after publication.
+If you instead use uv for your package manager:
+
+.. code-block:: shell
+    
+    uv add git+https://github.com/tomyoshida/frap.git
+
+We'll upload it to PyPI potentially after publication of the paper!

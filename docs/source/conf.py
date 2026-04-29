@@ -50,9 +50,6 @@ autosummary_generate = True
 # Mock heavy/optional dependencies so autodoc works on Read the Docs
 
 autodoc_mock_imports = [
-    "astroquery",
-    "astroquery.linelists",
-    "astroquery.linelists.cdms",
     "astropy",
     "astropy.constants",
     "casatools",
