@@ -37,6 +37,8 @@ from scipy.special import j0 as J0
 from scipy.special import j1 as J1
 from scipy.special import jn_zeros
 
+
+
 from jax.debug import print as jax_print
 
 jax.config.update("jax_enable_x64", True) 
@@ -296,7 +298,7 @@ class model:
             if obs.kind == 'visibility':
 
                 # Hankel transform
-                V = jnp.dot(obs.H, _I) / 1e-23 # Jy
+                V = jnp.dot(obs.H, obs.f_pbcor * _I) / 1e-23 # Jy
 
                 if self._userdef_vis_model is not None:
                     V = self._userdef_vis_model( V, obs, f_latents )
@@ -451,7 +453,7 @@ class model:
                                     obs = _obs._Tb
                                 )
 
-    def set_visibility( self, band, q, V, s, f_s, f_mean,  nu, Nch ):
+    def set_visibility( self, band, q, V, s, f_s, f_mean,  nu, Nch, pbcor = True, D = 12.0 ):
         '''set observations for a given band.
 
         This method allows you to input observational data for a specific band, including spatial frequencies, visibilities, uncertainties, flux scaling factors, and frequencies.
@@ -465,7 +467,7 @@ class model:
             f_mean (float): mean flux scaling factor
             nu (array): frequencies in Hz
             Nch (int): number of channels. Shound be consistent with q, V, s.
-
+            D (float) : diameter of an antenna in meters
         '''
 
         obs_tmp = []
@@ -485,6 +487,11 @@ class model:
             H = self._HT_prefactor * J0(arg)
  
             _obs.H = H
+
+            if pbcor:
+                _obs.f_pbcor = term_pbcor( nu[nch], self._incl, self._r_GP, D ) # r_GP is in arcsec, incl is in rad, nu is in Hz.
+            else:
+                _obs.f_pbcor = 1.0
             
             obs_tmp.append( _obs )
             

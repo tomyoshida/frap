@@ -14,6 +14,8 @@ import jax.numpy as jnp
 
 from scipy.ndimage import gaussian_filter1d
 
+from scipy.special import i0
+
 
 
 from scipy.interpolate import interp1d as scipy_interp1d
@@ -39,6 +41,21 @@ def check_range(x, lower, upper, alpha=100.0):
     penalty_upper = -alpha * jnp.square(jnp.maximum(0.0, dist_upper))
     
     return penalty_lower + penalty_upper
+
+
+def term_pbcor( nu, incl, r, D ):
+
+    lam = c / nu # cm
+
+    FoV = np.rad2deg(1.13 * lam * 1e-2 / D)*3600
+
+    Theta = FoV / (2*np.sqrt(2 * np.log(2)))
+
+
+    a1 = np.exp( -(r**2 / 4 / Theta**2) * ( 1 + np.cos(incl)**2 ) )
+    a2 = i0( r**2/4/Theta**2 * np.sin(incl)**2 )
+
+    return a1 * a2
 
 
 
