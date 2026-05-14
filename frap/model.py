@@ -453,7 +453,7 @@ class model:
                                     obs = _obs._Tb
                                 )
 
-    def set_visibility( self, band, q, V, s, f_s, f_mean,  nu, Nch, pbcor = True, D = 12.0 ):
+    def set_visibility( self, band, q, V, s, f_s, f_mean,  nu, Nch, pbcor = True, pbcor_fac = None ):
         '''set observations for a given band.
 
         This method allows you to input observational data for a specific band, including spatial frequencies, visibilities, uncertainties, flux scaling factors, and frequencies.
@@ -489,7 +489,7 @@ class model:
             _obs.H = H
 
             if pbcor:
-                _obs.f_pbcor = term_pbcor( nu[nch], self._incl, self._r_GP, D ) # r_GP is in arcsec, incl is in rad, nu is in Hz.
+                _obs.f_pbcor = pbcor_fac # r_GP is in arcsec, incl is in rad, nu is in Hz.
             else:
                 _obs.f_pbcor = 1.0
             
