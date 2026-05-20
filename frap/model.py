@@ -453,7 +453,7 @@ class model:
                                     obs = _obs._Tb
                                 )
 
-    def set_visibility( self, band, q, V, s, f_s, f_mean,  nu, Nch, pbcor = True, pbcor_fac = None ):
+    def set_visibility( self, band, q, V, s, f_s, f_mean,  nu, Nch, pbcor = 'ALMA-12m' ):
         '''set observations for a given band.
 
         This method allows you to input observational data for a specific band, including spatial frequencies, visibilities, uncertainties, flux scaling factors, and frequencies.
@@ -467,7 +467,7 @@ class model:
             f_mean (float): mean flux scaling factor
             nu (array): frequencies in Hz
             Nch (int): number of channels. Shound be consistent with q, V, s.
-            D (float) : diameter of an antenna in meters
+            pbcor (str): 'ALMA-12m' for primary beam correction. Set None NOT to do it.
         '''
 
         obs_tmp = []
@@ -489,7 +489,7 @@ class model:
             _obs.H = H
 
             if pbcor:
-                _obs.f_pbcor = pbcor_fac # r_GP is in arcsec, incl is in rad, nu is in Hz.
+                _obs.f_pbcor = pbcor_fac_ALMA_12m( self._r_GP, nu[nch] ) # r_GP is in arcsec, incl is in rad, nu is in Hz.
             else:
                 _obs.f_pbcor = 1.0
             

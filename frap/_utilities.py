@@ -16,6 +16,8 @@ from scipy.ndimage import gaussian_filter1d
 
 from scipy.special import i0
 
+from scipy.special import j1
+
 
 
 from scipy.interpolate import interp1d as scipy_interp1d
@@ -261,3 +263,27 @@ def create_opacity_table(lam, a, k_abs, k_sca_eff, lam0, log10_a_dense, q_dense,
         
         return log10_k_abs_tot, log10_k_sca_eff_tot
     
+
+
+def pbcor_fac_ALMA_12m( r, nu, D = 10.7e2, d = 0.75e2 ):
+    '''
+    This is the same equation implemented in CASA. Note that this is not the same as the physically correct equation. 
+    See the CASA documentation for details.
+    r: radius in arcsec
+    nu: frequeny in Hz
+    '''
+
+    eps = d/D
+    
+    k = np.pi * nu/c 
+    x = k*D*np.sin(np.deg2rad(r/3600))
+
+    t1 = 2.0 * j1(x)/x
+    t2 = 2.0 * eps * j1( x /eps )/ x 
+
+    V = 1/(1-eps**2)**2 * ( t1 -  eps**2 * t2 )**2
+    
+    return V
+
+
+
