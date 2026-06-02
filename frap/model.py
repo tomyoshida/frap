@@ -103,7 +103,7 @@ class model:
         self._jitter = jitter
 
         self._incl = np.deg2rad(incl)
-        self._pa = np.def2rad(pa)
+        self._pa = np.deg2rad(pa)
 
         
         self._observations = {}
