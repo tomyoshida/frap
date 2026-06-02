@@ -286,4 +286,73 @@ def pbcor_fac_ALMA_12m( r, nu, D = 10.7e2, d = 0.75e2 ):
     return V
 
 
+def obscured_airy_pattern_CASA(theta, D, d, nu):
+    '''
+    In a function in CASA (PBMath1DAiry::fillPBArray()), the obscured Airy disk is implimented as follows.
+    I think this is likely not correct, as the "lengthRatio" parameter is multiplied to D,
+    resulting in larger effective blockage than the aparture itself.
+    
+    theta : offset from the center (arcsec)
+    D : aparture diameter (cm)
+    d : blockage diameter (cm)
+    nu : frequency (Hz)
+    '''
+
+    areaRatio = (D/d)**2
+    areaNorm = areaRatio - 1.0
+    lengthRatio = D/d
+    
+    k = np.pi * nu/c 
+    x = k*D*np.sin(np.deg2rad(theta/3600))
+
+    v = ( areaRatio * 2.0 * j1(x)/x - 2.0 * j1( x * lengthRatio)/(x*lengthRatio) )/ areaNorm
+    
+    V = v**2
+    
+    return V
+
+def beam_func(rho, nu):
+
+    D = 10.7*100
+    d = 0.75*100    
+    return obscured_airy_pattern_CASA(rho, D, d, nu)
+
+    
+def get_deprojected_beam_arcsec(r_grid, nu, incl, pa=0.0, dx=0.0, dy=0.0, n_theta=360):
+    
+    i_rad = incl
+    pa_rad = pa
+    
+    theta = np.linspace(0, 2 * np.pi, n_theta, endpoint=False)
+    
+    R, Theta = np.meshgrid(r_grid, theta, indexing='ij')
+    
+    x_d = R * np.cos(Theta)
+    y_d = R * np.sin(Theta)
+    
+    x_s = x_d 
+    y_s = y_d * np.cos(i_rad)
+
+    
+    cos_pa, sin_pa = np.cos(pa_rad), np.sin(pa_rad)
+    
+    
+    ra_off  = x_s * cos_pa - y_s * sin_pa + dx
+    dec_off = x_s * sin_pa + y_s * cos_pa + dy
+
+    
+    
+    rho = np.sqrt(ra_off**2 + dec_off**2)
+
+    
+    beam_values = beam_func(rho, nu)
+    A_eff = np.mean(beam_values, axis=1)
+    
+    return A_eff
+
+#f_A = get_deprojected_beam_arcsec(r_GP, beam_func, incl=6.0, pa=6.0, dx=-1.0, dy=2.0, n_theta=360)
+
+
+
+#plt.plot(r_GP, f_A)
 

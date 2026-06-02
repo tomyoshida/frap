@@ -55,11 +55,12 @@ class model:
         set_opacity: method to set dust opacity model
     '''
 
-    def __init__(self, incl, r_out, N_GP, spacing = 'FB', r_in = None, userdef_vis_model = None, flux_uncert = True, jitter=1e-4, hyperparameters_fixed=True):
+    def __init__(self, incl, r_out, N_GP,  pa = 0.0, spacing = 'FB', r_in = None, userdef_vis_model = None, flux_uncert = True, jitter=1e-4, hyperparameters_fixed=True):
         '''initialize the model
 
         Args:
             incl (float): inclination angle in degrees
+            pa (float) : position angle in degrees. Only used for primary beam correction.
             r_out (float): outer radius in arcseconds
             N_GP (int): number of Gaussian process points
             userdef_vis_model (function, optional): user-defined visibility model function. Defaults to None. The function should take (V, obs, f_latents) as arguments and return modified V.
@@ -102,6 +103,7 @@ class model:
         self._jitter = jitter
 
         self._incl = np.deg2rad(incl)
+        self._pa = np.def2rad(pa)
 
         
         self._observations = {}
@@ -489,7 +491,8 @@ class model:
             _obs.H = H
 
             if pbcor:
-                _obs.f_pbcor = pbcor_fac_ALMA_12m( self._r_GP, nu[nch] ) # r_GP is in arcsec, incl is in rad, nu is in Hz.
+                #_obs.f_pbcor = pbcor_fac_ALMA_12m( self._r_GP, nu[nch] ) # r_GP is in arcsec, incl is in rad, nu is in Hz.
+                _obs.f_pbcor = get_deprojected_beam_arcsec( self._r_GP, nu[nch], self._incl, pa=self._pa, dx=0.0, dy=0.0, n_theta=360)
             else:
                 _obs.f_pbcor = 1.0
             
