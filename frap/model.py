@@ -393,13 +393,13 @@ class model:
                 # f_band = 1.0 + _g_f_band*self._s_fs[band]
 
 
-                # 標準正規分布からサンプリング
+                # sampling from the normal dist
                 _g_f_band = numpyro.sample(
                     f"g_f_scale_{band}",
                     Normal(0, 1)
                 )
 
-                # 指数変換することで対数正規分布にする
+                # change it to log normal dist
                 # f_band = exp(0 + 0.1 * standard_normal)
                 f_band = jnp.exp( jnp.log(self._mean_fs[band]) + _g_f_band * self._s_fs[band])
 
@@ -421,9 +421,11 @@ class model:
                                     Normal(loc= V_final, scale= _obs._s),
                                     obs = _obs._V
                                 )
+                        
                     elif _obs.kind == 'radialprofile':
 
                         # Instead if you fit the radial profiles...
+                        # UNDER DEVELOPMENT
 
                         Tb_final = I2Tb( _obs._nu, _obs.I_model ) / f_band 
 
@@ -617,8 +619,6 @@ class model:
         f_latents = parameters
 
 
-        #if plot:
-        #   fig, axes = plt.subplots(  N_panels, 2 , figsize=(15, 5*N_panels) )
 
         V_res = {}
         I_res = {}
@@ -633,13 +633,8 @@ class model:
 
             for _obs in obs:
 
-                #DP = self.dp
-
-                #DP.debug_time['t0'].append( time.perf_counter() )
 
                 _V_res , _I_res= self._expansion_model( f_latents, _obs, dryrun=True )
-
-
 
                 V_res[band][_obs._name] = jnp.array(_V_res)
                 I_res[band][_obs._name] = jnp.array(_I_res)
@@ -907,6 +902,8 @@ class inference:
         predictive = Predictive(self.model._GP_sample, posterior_samples=map_samples_fixed, num_samples=1)
         rng_key, rng_key_pred = jax.random.split(rng_key)
         map_outputs = predictive(rng_key_pred)
+
+        self.map_outputs = map_outputs
         
         
         map_estimates = {k: jnp.array([[jnp.squeeze(v, axis=0)]]) for k, v in map_outputs.items()}
@@ -917,17 +914,15 @@ class inference:
             if priors['GP'] == False:
                 self.delta_medians[param_name] = map_estimates[param_name]
             else:
-                # 潜在変数 g_... を取得。
-                # predictiveを通しているので map_estimates[f'g_{param_name}'] が存在する
                 g_predictions = map_estimates[f'g_{param_name}']
                 
-                # 物理領域への変換
+                
                 f_predictions = sigmoid_transform(
                     g_predictions, 
                     min_val=priors['f_min'], 
                     max_val=priors['f_max']
                 )
-                self.delta_medians[param_name] = f_predictions
+                self.delta_medians[param_name] = f_predictions[0,0]
 
         self.svi_map_results = results(  r = self.model._r_GP, 
                                     sample = { 'MAP_g': map_estimates,
@@ -1039,6 +1034,9 @@ class inference:
                                     )
         
         return self.mcmc_results
+    
+
+    
 
 
 
