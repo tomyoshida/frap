@@ -634,13 +634,37 @@ class model:
             for _obs in obs:
 
 
-                _V_res , _I_res= self._expansion_model( f_latents, _obs, dryrun=True )
+                _V_res , _I_res = self._expansion_model( f_latents, _obs, dryrun=True )
 
                 V_res[band][_obs._name] = jnp.array(_V_res)
                 I_res[band][_obs._name] = jnp.array(_I_res)
 
 
         return V_res, I_res
+    
+
+    def calc_model_cv( self, MAP_results ):
+
+        V_final = {}
+
+        MAP_f = MAP_results.sample['MAP_f']
+        MAP_g = MAP_results.sample['MAP_g']
+        Vmod, _ = self.calc_model( MAP_f )
+
+        for band in self._bands:
+
+            obs = self._observations[band]
+
+            V_final[band] = {}
+
+            for _obs in obs:
+
+                f_band = MAP_g[f'f_band_{band}']
+                V_final[band][_obs._name] = Vmod[band][_obs._name] / f_band
+
+                
+        return V_final
+
     
     def calc_model_tau( self, parameters ):
         """Compute model optical depths
@@ -903,7 +927,7 @@ class inference:
         rng_key, rng_key_pred = jax.random.split(rng_key)
         map_outputs = predictive(rng_key_pred)
 
-        self.map_outputs = map_outputs
+        #self.map_outputs = map_outputs
         
         
         map_estimates = {k: jnp.array([[jnp.squeeze(v, axis=0)]]) for k, v in map_outputs.items()}
@@ -927,6 +951,7 @@ class inference:
         self.svi_map_results = results(  r = self.model._r_GP, 
                                     sample = { 'MAP_g': map_estimates,
                                                'MAP_f': self.delta_medians,
+                                               'MAP_model' : map_outputs
                                             },
                                     logP = { 'MAP': -loss },
                                     param_set = self.model._free_parameters
