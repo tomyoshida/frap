@@ -1,4 +1,7 @@
 
+##### utility functions for cross-validation and data splitting ####
+
+
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -10,6 +13,17 @@ import numpy as np
 
 
 def _get_indices(n_folds, bands, obs, seed = 1):
+    '''get indices for cross-validation splitting
+    
+    Args:
+        n_folds (int): number of folds for cross-validation
+        bands (list): list of band names to split
+        obs (dict): dictionary containing observation data for each band
+        seed (int): random seed for reproducibility (default: 1)
+        
+    Returns:
+        all_fold_indices (dict): dictionary containing indices for each fold
+    '''
 
     np.random.seed(seed)
 
@@ -36,6 +50,19 @@ def _get_indices(n_folds, bands, obs, seed = 1):
 
 
 def split_data(n_folds, bands, obs, seed = 1):
+    '''Split the observation data into training and test sets for cross-validation.
+    
+    Args:
+        n_folds (int): number of folds for cross-validation
+        bands (list): list of band names to split
+        obs (dict): dictionary containing observation data for each band
+        seed (int): random seed for reproducibility (default: 1)
+
+    Returns:
+        train_obs (dict): dictionary containing training observation data for each fold
+        test_obs (dict): dictionary containing test observation data for each fold
+    
+    '''
     
     all_fold_indices = _get_indices(n_folds, bands, obs, seed = seed)
 

@@ -47,7 +47,7 @@ jax.config.update("jax_enable_x64", True)
 
 
 class model:
-    '''class for FRAPPE model
+    '''class for FRAP model
 
     Attributes:
         set_parameters: method to set model parameters
@@ -644,11 +644,28 @@ class model:
     
 
     def calc_model_cv( self, MAP_results ):
+        '''Compute model visibilities for cross-validation.
+        
+        This method calculates the model visibilities for cross-validation using the MAP results.
+
+        Args:
+            MAP_results (results): results object containing MAP samples and related information.
+
+        Returns:
+            V_final (dict): dictionary of model visibilities for each band and observation, corrected for flux scaling.
+        
+        '''
 
         V_final = {}
 
         MAP_f = MAP_results.sample['MAP_f']
         MAP_g = MAP_results.sample['MAP_g']
+
+
+        # if a parameter is not assigned in MAP_f, the default value is added:
+        for param_name, profile in self._fixed_parameters.items():
+            MAP_f[param_name] = profile['profile']
+
         Vmod, _ = self.calc_model( MAP_f )
 
         for band in self._bands:
@@ -664,17 +681,50 @@ class model:
 
                 
         return V_final
+    
+
+    def calc_chi2( self, MAP_results ):
+        '''Compute chi-squared for cross-validation.
+        
+        This method calculates the chi-squared value for cross-validation using the MAP results. Note that the MAP estimate should be done with the data splitted from the same dataset.
+
+        Args:
+            MAP_results (results): results object containing MAP samples and related information.
+        
+        Returns:
+            chi2 (float): chi-squared value for the cross-validation.
+        
+        '''
+
+        Vmod = self.calc_model_cv( MAP_results )
+
+        chi2 = 0.0
+        
+        for band in self._bands:
+            obs = self._observations[band]
+            
+            for _obs in obs: 
+
+                chi2 += jnp.sum( ( _obs._V - Vmod[band][_obs._name] )**2 / _obs._s**2  )
+
+        return chi2
 
     
     def calc_model_tau( self, parameters ):
         """Compute model optical depths
+
+        This method calculates the model optical depths for all observations based on the provided parameters.
+
+        Args:
+            parameters (dict): dictionary of model parameters. Should contain keys corresponding to free and fixed parameters.
+
+        Returns:
+            tau_res (dict): dictionary of model optical depths for each band and observation.
+
         """
 
         f_latents = parameters
 
-
-        #if plot:
-        #   fig, axes = plt.subplots(  N_panels, 2 , figsize=(15, 5*N_panels) )
 
         tau_res = {}
         
@@ -687,12 +737,8 @@ class model:
 
             for _obs in obs:
 
-                #DP = self.dp
-
-                #DP.debug_time['t0'].append( time.perf_counter() )
 
                 _tau_res = self._expansion_model( f_latents, _obs, dryrun=True, output_tau = True )
-
 
 
                 tau_res[band][_obs._name] = jnp.array(_tau_res)
@@ -701,7 +747,7 @@ class model:
 
     def _g_to_f( self, g_samples ):
 
-         # 物理パラメータ (f_samples) への変換処理
+        # convert g_samples to f_samples using the sigmoid transform for GP parameters and identity for non-GP parameters
         f_samples = {}
         for param_name, priors in self._free_parameters.items():
             if priors['GP'] == False:
@@ -714,7 +760,7 @@ class model:
 
 
 class observation:
-    '''class for observation data
+    '''class for containing observation data
 
     '''
 
