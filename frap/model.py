@@ -316,16 +316,32 @@ class model:
             elif obs.kind == 'radialprofile':
 
                 # Convolve with beam
-                I_convolved = jax_convolve( _I, obs._beam_kernel, mode='same' )
-                I_convolved_itp = jnp.interp(obs._r, self._r_GP, I_convolved)
 
+                # interpolate the model intensity to the observed radial points
+                I_itp = jnp.interp(obs._r, self._r_GP, _I)
+
+                # padding
+                kernel_size = obs._beam_kernel.shape[0]
+                pad_width = kernel_size // 2
+
+                
+                if kernel_size % 2 == 0:
+                    # even
+                    I_itp_padded = jnp.pad(I_itp, pad_width=(pad_width, pad_width - 1), mode='symmetric')
+                else:
+                    # odd
+                    I_itp_padded = jnp.pad(I_itp, pad_width=(pad_width, pad_width), mode='symmetric')
+
+                # convolve
+                I_itp_convolved = jax_convolve(I_itp_padded, obs._beam_kernel, mode='valid')
+                
                 if dryrun:
 
-                    return I_convolved_itp, _I
+                    return I_itp_convolved, _I
 
                 else:
 
-                    obs.I_model = I_convolved_itp
+                    obs.I_model = I_itp_convolved
             
 
     def _generate_model( self, f_latents ):
@@ -513,7 +529,7 @@ class model:
         for nch in range(Nch):
             
             _obs = observation( f'{band}_ch_{nch}', nu[nch], kind='radialprofile' )
-            _obs._radialprofile( r[nch], Tb[nch], s[nch], FWHM, self._dr )
+            _obs._radialprofile( r[nch], Tb[nch], s[nch], FWHM )
             
             obs_tmp.append( _obs )
             
@@ -790,7 +806,7 @@ class observation:
         self._V =  jax.device_put(jnp.asarray(V))
         self._s =  jax.device_put(jnp.asarray(s))
 
-    def _radialprofile( self, r, Tb, s, FWHM, dr):
+    def _radialprofile( self, r, Tb, s, FWHM):
 
         self._r = jax.device_put(jnp.asarray(r))
         self._Tb = jax.device_put(jnp.asarray(Tb))
@@ -816,9 +832,9 @@ class observation:
 
         ## beam kernel
 
+        dr = r[1] - r[0] # assuming uniform spacing in observations
         
-        
-        kernel_r = jnp.arange(-4 * sigma_beam, 4 * sigma_beam + dr, dr)
+        kernel_r = jnp.arange(-3 * sigma_beam, 3 * sigma_beam + dr, dr)
         kernel = jnp.exp(-(kernel_r**2) / (2.0 * sigma_beam**2))
         kernel = kernel / jnp.sum(kernel)
 
@@ -833,6 +849,7 @@ class inference:
         prior: method to show prior distributions
         SVI_MAP: method to run SVI for MAP estimation
         MCMC: method to run MCMC sampling
+
     '''
 
     def __init__(self, model ):
@@ -1118,6 +1135,8 @@ class results:
         r: radial grid points
         sample: dictionary of samples
         logP: dictionary of log probabilities
+
+    
     '''
 
     def __init__(self, r, sample, logP, param_set):
@@ -1129,8 +1148,10 @@ class results:
 
 class plot:
     '''class for plotting results
+
     Attributes:
         sample_paths: method to plot sample paths
+
     ''' 
 
     def __init__(self, results ):
