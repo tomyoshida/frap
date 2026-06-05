@@ -522,14 +522,14 @@ class model:
         self._s_fs[band] = f_s
         self._mean_fs[band] = f_mean
 
-    def set_radialprofile(  self, band, r, Tb, s, f_s, f_mean, nu, Nch, FWHM): 
+    def set_radialprofile(  self, band, r, Tb, s, f_s, f_mean, nu, Nch, FWHM, Cov): 
 
         obs_tmp = []
 
         for nch in range(Nch):
             
             _obs = observation( f'{band}_ch_{nch}', nu[nch], kind='radialprofile' )
-            _obs._radialprofile( r[nch], Tb[nch], s[nch], FWHM )
+            _obs._radialprofile( r[nch], Tb[nch], s[nch], FWHM, Cov[nch] )
             
             obs_tmp.append( _obs )
             
@@ -806,7 +806,7 @@ class observation:
         self._V =  jax.device_put(jnp.asarray(V))
         self._s =  jax.device_put(jnp.asarray(s))
 
-    def _radialprofile( self, r, Tb, s, FWHM):
+    def _radialprofile( self, r, Tb, s, FWHM, Cov):
 
         self._r = jax.device_put(jnp.asarray(r))
         self._Tb = jax.device_put(jnp.asarray(Tb))
@@ -819,13 +819,13 @@ class observation:
                     
         dist_sq = (r[:, None] - r[None, :])**2
                     
-        R_dist = jnp.exp(-dist_sq / (4 * sigma_beam**2))
+        # R_dist = jnp.exp(-dist_sq / (4 * sigma_beam**2))
         
 
-        self.Cov = s[:, None] * R_dist * s[None, :]
+        self.Cov = Cov #s[:, None] * R_dist * s[None, :]
                     
         
-        self.Cov += jnp.eye(self.Cov.shape[0]) * 1e-6
+        #self.Cov += jnp.eye(self.Cov.shape[0]) * 1e-6
 
         self.L_Cov = jnp.linalg.cholesky(self.Cov)
 
@@ -834,7 +834,7 @@ class observation:
 
         dr = r[1] - r[0] # assuming uniform spacing in observations
         
-        kernel_r = jnp.arange(-3 * sigma_beam, 3 * sigma_beam + dr, dr)
+        kernel_r = jnp.arange(-5 * sigma_beam, 5 * sigma_beam + dr, dr)
         kernel = jnp.exp(-(kernel_r**2) / (2.0 * sigma_beam**2))
         kernel = kernel / jnp.sum(kernel)
 
