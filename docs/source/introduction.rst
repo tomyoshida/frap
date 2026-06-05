@@ -53,4 +53,5 @@ Tutorials
    tutorial_1
    tutorial_2
    adv_1
+   adv_2
 
