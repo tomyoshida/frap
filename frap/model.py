@@ -522,14 +522,14 @@ class model:
         self._s_fs[band] = f_s
         self._mean_fs[band] = f_mean
 
-    def set_radialprofile(  self, band, r, Tb, s, f_s, f_mean, nu, Nch, FWHM, Cov): 
+    def set_radialprofile(  self, band, r, Tb, f_s, f_mean, nu, Nch, FWHM, Cov): 
 
         obs_tmp = []
 
         for nch in range(Nch):
             
             _obs = observation( f'{band}_ch_{nch}', nu[nch], kind='radialprofile' )
-            _obs._radialprofile( r[nch], Tb[nch], s[nch], FWHM, Cov[nch] )
+            _obs._radialprofile( r[nch], Tb[nch], FWHM, Cov[nch] )
             
             obs_tmp.append( _obs )
             
@@ -806,18 +806,18 @@ class observation:
         self._V =  jax.device_put(jnp.asarray(V))
         self._s =  jax.device_put(jnp.asarray(s))
 
-    def _radialprofile( self, r, Tb, s, FWHM, Cov):
+    def _radialprofile( self, r, Tb, FWHM, Cov):
 
         self._r = jax.device_put(jnp.asarray(r))
         self._Tb = jax.device_put(jnp.asarray(Tb))
-        self._s = jax.device_put(jnp.asarray(s))
+        #self._s = jax.device_put(jnp.asarray(s))
         self._FWHM = FWHM
 
 
         ## Covariance matrix
         sigma_beam = FWHM / (2 * jnp.sqrt(2 * jnp.log(2)))
                     
-        dist_sq = (r[:, None] - r[None, :])**2
+        #dist_sq = (r[:, None] - r[None, :])**2
                     
         # R_dist = jnp.exp(-dist_sq / (4 * sigma_beam**2))
         
