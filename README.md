@@ -11,17 +11,14 @@ See our [documentation](https://frap.readthedocs.io/en/latest/index.html) for de
 If you use [uv](https://docs.astral.sh/uv/) for the package manager:
 
 ```
-uv add git+https://github.com/tomyoshida/frap.git
+uv add astro-frap
 ```
 
 or you can use pip:
 
 ```
-pip install git+https://github.com/tomyoshida/frap.git
+pip install astro-frap
 ```
-
-We'll upload the code to PyPI soon!
-
 
 ## Citation
 
