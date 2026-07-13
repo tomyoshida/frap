@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "frap"
-version = "1.0.0.post05"
+version = "1.0.0"
 authors = [
   {name = "Tomohiro C. Yoshida", email = "tomohiroyoshida.astro@gmail.com"},
 ]
