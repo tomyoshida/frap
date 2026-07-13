@@ -3,10 +3,6 @@
 
 from .model import *
 from .cv import *
-#from ._utilities import *
-#from ._constants import *
-#from .msdata import *
-# from .prep import *
 
 # Version information
-__version__ = '0.1.0'
+__version__ = '1.0.0'

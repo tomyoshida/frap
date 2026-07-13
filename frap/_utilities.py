@@ -31,9 +31,7 @@ def check_range_old(x, lower, upper, alpha=10.0):
     return penalty
 
 def check_range(x, lower, upper, alpha=100.0):
-    """
-    勾配消失を防ぎつつ、数値的に安定したペナルティを与える
-    """
+    
     # 境界から外れた距離を計算
     dist_lower = lower - x
     dist_upper = x - upper

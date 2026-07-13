@@ -2,7 +2,14 @@
 Introduction - What is FRAP?
 ============================
 
-FRAP is a Python module for astronomical data analysis. On this page, we provide an overview of the tool.
+FRAP is a Python module for astronomical data analysis. On this page, we provide an overview of the tool, which is summerized in the flowchart below.
+
+.. figure:: /_static/flowchart.png
+   :alt: Flowchart of FRAP
+   :width: 100%
+   :align: center
+
+   Flowchart of FRAP.
 
 Background
 ==========
@@ -41,17 +48,4 @@ With FRAP, you can directly retrieve dust properties from interferometric visibi
 
 + Easy to use
     FRAP is designed to be easy to use in day-to-day research. A few simple lines of Python are enough to obtain results.
-
-
-Tutorials
-=========
-
-.. toctree::
-   :maxdepth: 2
-
-   tutorial_0
-   tutorial_1
-   tutorial_2
-   adv_1
-   adv_2
 
