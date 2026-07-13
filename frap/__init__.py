@@ -5,4 +5,4 @@ from .cv import *
 
 from importlib.metadata import version
 
-__version__ = version("frap")
+__version__ = version("astro-frap")
