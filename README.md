@@ -1,4 +1,4 @@
-# FRAP
+# Flexible Radial Analysis of Protoplanetary disks: FRAP
 
 ![flowchart](./docs/source/_static/flowchart.png)
 
