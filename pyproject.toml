@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frap"
+version = "1.0.0.post05"
+authors = [
+  {name = "Tomohiro C. Yoshida", email = "tomohiroyoshida.astro@gmail.com"},
+]
+description = "Flexible Radial Analysis of Protoplanetary disks"
+readme = "README_pypi.md"
+requires-python = ">=3.7"
+
+dependencies = [
+    "astropy>=7.2.0",
+    "jax>=0.10.0",
+    "matplotlib>=3.11.0",
+    "numpy>=2.5.1",
+    "numpyro>=0.20.1",
+    "scipy>=1.18.0",
+    "tqdm>=4.67.3",
+]
+
+[project.urls]
+Documentation = "https://frap.readthedocs.io/en/latest/index.html"
+Source = "https://github.com/tomyoshida/frap"
+
+
+[tool.setuptools]
+packages = ["frap"]
