@@ -33,6 +33,7 @@ Do you have observational data of the dust continuum emission from a protoplanet
    :caption: Contents:
 
    introduction
+   start
    installation
    tutorial_0
    tutorial_1
@@ -41,6 +42,10 @@ Do you have observational data of the dust continuum emission from a protoplanet
 
    autoapi/index
 
+
+Citation
+--------
+If you find FRAP useful for your research, please cite our paper that will be published soon!
 
 
 Contact

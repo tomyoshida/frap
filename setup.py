@@ -3,10 +3,14 @@ from setuptools import setup
 
 
 setup(
-    name="frap",
+    name="FRAP",
     version="1.0.0",
     author="Tomohiro C. Yoshida",
     author_email="tomohiroyoshida.astro@gmail.com",
-    description="frap",
-    packages=["frap"]
+    description="Flexible Radial Analysis of Protoplanetary disks",
+    packages=["frap"],
+    project_urls={
+        "Documentation": "https://frap.readthedocs.io/en/latest/index.html",
+        "Source Code": "https://github.com/tomyoshida/frap"
+    },
 )
