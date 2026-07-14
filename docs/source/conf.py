@@ -75,11 +75,16 @@ exclude_patterns = ['_build', '**.ipynb_checkpoints']
 
 html_logo = '_static/frappe_logo.png'
 
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+
+html_theme_options = {
+    "analytics_id": "G-8JJZ9DHRRV",
+}
 
 def setup(app):
     app.add_css_file('custom.css')
