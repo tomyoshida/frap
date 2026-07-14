@@ -21,15 +21,17 @@ author = 'Tomohiro C. Yoshida'
 
 extensions = [
     'autoapi.extension',
-    #'sphinx.ext.autodoc',
-    #'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'sphinx_rtd_theme',
     'nbsphinx',
-    'IPython.sphinxext.ipython_console_highlighting' ,
+    'IPython.sphinxext.ipython_console_highlighting',
     'sphinxcontrib.video',
+    'sphinxcontrib.googleanalytics',
 ]
+
+googleanalytics_id = "G-8JJZ9DHRRV"
+googleanalytics_enabled = True
 
 autoapi_type = 'python'
 autoapi_dirs = ['../../frap'] 
@@ -82,16 +84,10 @@ html_logo = '_static/frappe_logo.png'
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
-html_theme_options = {
-    "analytics_id": "G-8JJZ9DHRRV",
-}
 
 def setup(app):
     app.add_css_file('custom.css')
-
-
-
-
+    app.connect('source-read', truncate_notebook_outputs)
 
 
 
@@ -139,6 +135,3 @@ def truncate_notebook_outputs(app, docname, source):
         # 万が一解析に失敗してもビルドを止めない
         pass
 
-def setup(app):
-    # source-readイベントに接続
-    app.connect('source-read', truncate_notebook_outputs)

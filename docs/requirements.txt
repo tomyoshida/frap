@@ -3,3 +3,4 @@ sphinx-autoapi
 nbsphinx
 ipython
 sphinxcontrib-video
+sphinxcontrib-googleanalytics
