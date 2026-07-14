@@ -20,10 +20,10 @@ These data are the direct observables from the measurements and are called *inte
 There are two main approaches to retrieve the physical quantities of interest:
 
 1. Image-based analysis
-    From the visibility data, we can reconstruct images (the intensity distribution on the sky) using algorithms such as CLEAN or regularized maximum-likelihood techniques. If images at multiple frequencies are available, we can analyze the SED and constrain physical parameters at each position on the sky plane. This approach is straightforward, but imaging algorithms can introduce additional uncertainty because image reconstruction is fundamentally an underdetermined problem. Furthermore, if spatial resolutions differ among frequencies, we typically have to convolve images to the largest common beam size for a fair comparison, losing the resolution. This method also implicitly assumes that structures are perfectly resolved, which can bias the results. To improve sensitivity, azimuthal averaging of intensities is sometimes applied to axisymmetric disks, and the radial profiles at each frequency are analyzed instead. The radial intensity profile can also be derived directly via a Gaussian-process approach in the visibility domain (`frankenstein <https://ui.adsabs.harvard.edu/abs/2020MNRAS.495.3209J/abstract>`_).
+    From the visibility data, we can reconstruct images (the intensity distribution on the sky) using algorithms such as CLEAN or regularized maximum-likelihood techniques. If images at multiple frequencies are available, we can analyze the SED and constrain physical parameters at each position on the sky plane. This approach is straightforward, but imaging algorithms can introduce additional uncertainty because image reconstruction is fundamentally an underdetermined problem. Furthermore, if spatial resolutions differ among frequencies, we typically have to convolve images to the largest common beam size for a fair comparison, losing the resolution. This method also implicitly assumes that structures are perfectly resolved, which can bias the results.
 
 2. Forward modeling
-    We can calculate the visibilities by assuming parametric physical models. We can then search for parameter sets that best reproduce the observations. This approach is particularly powerful when the underlying physics is complex and direct retrieval is difficult.
+    We can calculate the visibilities by assuming parametric physical models. We can then search for parameter sets that best reproduce the observations. This approach is particularly useful when the underlying physics is complex and direct retrieval is difficult. However, the model has to be physically correct to get a reliable result. If the model is too simple, it can lead to systematic bias.
 
 Both approaches have pros and cons: image-based analysis assumes minimal physics but can make robust estimation difficult. Conversely, forward modeling could be biased by its own assumptions.
 We need an approach that balances these two approaches. To this end, we have developed **FRAP**.
@@ -47,5 +47,5 @@ With FRAP, you can directly retrieve dust properties from interferometric visibi
     MCMC sampling and stochastic variational inference are implemented using the `numpyro <https://num.pyro.ai/en/stable/>`_ package, providing extensibility. 
 
 + Easy to use
-    FRAP is designed to be easy to use in day-to-day research. A few simple lines of Python are enough to obtain results.
+    FRAP is designed to be easy-to-use. A few simple lines of Python are enough to obtain results.
 
