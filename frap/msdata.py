@@ -177,7 +177,7 @@ class ms:
         )
 
         Re_all = Re_all / np.cos(np.deg2rad(incl))
-        sigma2_all = sigma2_all / np.cos(np.deg2rad(incl))
+        sigma2_all = sigma2_all / np.cos(np.deg2rad(incl))**2
         
         Re_dict, s_dict, nu_dict, q_dict, q_cent, q_mean, Nq = self._binning_q_only(
             q_all, Re_all, sigma2_all, nu_all, FoV
@@ -356,6 +356,7 @@ class ms:
         s_dict = {}
         nu_dict = {}
         q_dict = {}
+        q_cent_valid = []
         q_mean = {}
 
         iq_valid = 0
@@ -368,18 +369,20 @@ class ms:
                 Re_dict[iq_valid] = Re_all[mask]
                 s_dict[iq_valid] = np.sqrt(sigma2_all[mask])
                 nu_dict[iq_valid] = freq_all[mask]
-                
-                #q_dict[iq_valid] = q_cent[iq]
-
-                
                 q_dict[iq_valid] = q_all[mask]
+
+                # 採用したビンの中心を、同じ順番で保存
+                q_cent_valid.append(q_cent[iq])
+
 
                 _weights = 1.0 / sigma2_all[mask]
                 q_mean[iq_valid] = np.average(q_all[mask], weights=_weights)
 
                 iq_valid += 1
 
-        return Re_dict, s_dict, nu_dict, q_dict, q_cent, q_mean, iq_valid
+        q_cent_valid = np.asarray(q_cent_valid)
+        
+        return Re_dict, s_dict, nu_dict, q_dict, q_cent_valid, q_mean, iq_valid
 
 
 

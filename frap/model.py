@@ -129,50 +129,42 @@ class model:
     
         R = self._r_GP[:, None]
 
-        if not self._hyperparameters_fixed:
-
-            priors = self._free_parameters['log10_Sigma_d']
-
-            _g_variance = priors['g_variance'] + (numpyro.sample(f"variance", Uniform(-1.0, 1.0)) + 1.0) / 2.0 * ( 1.0 - priors['g_variance'] )
-            _g_lengthscale = priors['g_lengthscale'] + (numpyro.sample(f"lengthscale", Uniform(-1.0, 1.0)) + 1.0) / 2.0 * ( jnp.max(R)/4.0 - priors['g_lengthscale'] )
-            _g_mean = priors['g_mean']
-
-        
         f_latents = {}
-    
-        
+
         for param_name, priors in self._free_parameters.items():
 
-            if priors['GP'] == True:
-                
+            if priors['GP']:
+
+                _g_mean = priors['g_mean']
+
                 if self._hyperparameters_fixed:
-                    _g_variances = priors['g_variance']
-                    _g_lengthscales = priors['g_lengthscale']
-
-                    _g_mean = priors['g_mean']
-
                     L_K = priors['L_K']
 
                 else:
-            
-                    K = jnp.zeros((R.shape[0], R.shape[0]))
+                    # not really tested this. and do not reccommend to use this option for most cases.
 
-                    for  _g_variance, _g_lengthscale in zip( _g_variances, _g_lengthscales ):
-                        K += rbf_kernel(R, R, _g_variance, _g_lengthscale)
+                    u_variance = (numpyro.sample(f"variance_{param_name}", Uniform(-1.0, 1.0)) + 1.0) / 2.0
+                    u_lengthscale = (numpyro.sample(f"lengthscale_{param_name}", Uniform(-1.0, 1.0)) + 1.0) / 2.0
+
+                    _g_variances = priors['g_variance'] + u_variance * (1.0 - priors['g_variance'])
+                    _g_lengthscales = priors['g_lengthscale'] + u_lengthscale * (jnp.max(R) / 4.0 - priors['g_lengthscale'])
+
+                    K = jnp.zeros((R.shape[0], R.shape[0]))
+                    for variance, lengthscale in zip(_g_variances, _g_lengthscales):
+                        K += rbf_kernel(R, R, variance, lengthscale)
 
                     relative_jitter = jnp.nanmean(jnp.diag(K)) * self._jitter
                     K += jnp.eye(R.shape[0]) * relative_jitter
-
 
                     if calc_cond_num:
                         eigenvalues = jnp.linalg.eigvalsh(K)
                         cond_num = jnp.max(eigenvalues) / jnp.maximum(jnp.min(eigenvalues), 1e-18)
                         jax_print("Param: {name}, Condition Number: {cond}", name=param_name, cond=cond_num)
-                    
-                                    
+
                     L_K = jnp.linalg.cholesky(K)
 
-                
+
+
                 z = numpyro.sample(
                     f'g_{param_name}_z',
                     Normal(0.0, 1.0).expand([R.shape[0]])
@@ -190,8 +182,7 @@ class model:
                     min_val=priors['f_min'],
                     max_val=priors['f_max']
                 )
-
-                                
+         
                     
             else:
                 f_latents[param_name] = numpyro.sample(

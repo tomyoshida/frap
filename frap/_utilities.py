@@ -235,22 +235,20 @@ def create_opacity_table(lam, a, k_abs, k_sca_eff, lam0, log10_a_dense, q_dense,
         log10_k_abs_itp  = jnp.array( gaussian_filter1d( np.array(log10_k_abs_itp), sigma=sigma_a ) )
         log10_k_sca_eff_itp = jnp.array( gaussian_filter1d( np.array(log10_k_sca_eff_itp), sigma=sigma_a ) )
 
-
-
                 
-        vmap_over_q = jax.vmap(
+    vmap_over_q = jax.vmap(
                     size_average_opacity,
                     in_axes=(None, None, None, None, None, 0)  # q だけが配列
                 )
 
                
-        vmap_over_a_and_q = jax.vmap(
+    vmap_over_a_and_q = jax.vmap(
                     vmap_over_q,
                     in_axes=(None, None, None, 0, None, None)  # log10_a_max だけが配列
                 )
 
                 
-        log10_k_abs_tot, log10_k_sca_eff_tot = vmap_over_a_and_q(
+    log10_k_abs_tot, log10_k_sca_eff_tot = vmap_over_a_and_q(
                     log10_a_dense,
                     log10_k_abs_itp,
                     log10_k_sca_eff_itp,
@@ -259,7 +257,7 @@ def create_opacity_table(lam, a, k_abs, k_sca_eff, lam0, log10_a_dense, q_dense,
                     q_dense
                 )
         
-        return log10_k_abs_tot, log10_k_sca_eff_tot
+    return log10_k_abs_tot, log10_k_sca_eff_tot
     
 
 
