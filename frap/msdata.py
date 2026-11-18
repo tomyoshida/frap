@@ -262,7 +262,7 @@ class ms:
         
         _sigma2_tmp = 1/weight
         
-        _sigma2 = 0.5*( _sigma2_tmp[0] + _sigma2_tmp[1] )
+        _sigma2 = 0.25*( _sigma2_tmp[0] + _sigma2_tmp[1] )
         sigma2 = np.broadcast_to(_sigma2, (Re.shape[0], _sigma2.shape[0]))
         
         return u, v, Re, sigma2, chan_freq, flag
@@ -443,9 +443,18 @@ class ms:
                         s_dict[iq], maxfev
                     )
 
-                    I_res = np.append( I_res, I_fit )
-                    Ierr_res = np.append( Ierr_res, I_err )
-                    q_res = np.append(q_res, q_cen[iq])
+                    q_fit = q_cen[iq]
+
+                else:
+                    weights = 1.0 / s_dict[iq]**2
+
+                    I_fit = np.average(Re_dict[iq], weights=weights)
+                    I_err = np.sqrt(1.0 / np.sum(weights))
+                    q_fit = np.average(q_dict[iq], weights=weights)
+
+                I_res = np.append(I_res, I_fit)
+                Ierr_res = np.append(Ierr_res, I_err)
+                q_res = np.append(q_res, q_fit)
 
 
             return q_res, I_res, Ierr_res

@@ -131,7 +131,7 @@ def sigmoid_transform_old(x, min_val=0.0, max_val=1.0):
     return min_val + (max_val - min_val) * y01
 
 
-def F(tau, omega):
+def F_old(tau, omega):
     '''
     Calculate the function F(tau, omega) used in radiative transfer.
     tau: jnp.ndarray or float, optical depth
@@ -157,6 +157,42 @@ def F(tau, omega):
     denom = term1 - term2
     
     return  (A + B) / denom
+
+
+def F(tau, omega):
+    '''
+        Calculate the function F(tau, omega) used in radiative transfer.
+        tau: jnp.ndarray or float, optical depth
+        omega: jnp.ndarray or float, single scattering albedo
+        Returns the computed values of F(tau, omega).
+        Ref. Miyake & Nakagawa 1993, Icarus, 106, 20; Sierra et al. 2020, ApJ, 892, 136
+    '''
+    
+    eps = 1.0 - omega
+    s = jnp.sqrt(3.0 * eps)
+    t = tau / eps
+    d = s - 1.0
+    z = d * t
+
+    near = jnp.abs(z) < 1e-3
+    
+    z_small = jnp.where(near, z, 0.0)
+
+    series = (1.0 - z_small / 2.0 + z_small**2 / 6.0
+              - z_small**3 / 24.0 + z_small**4 / 120.0)
+    
+    B_limit = t * jnp.exp(-t) * series
+
+    # Keep even the inactive division finite for JAX autodiff.
+    d_safe = jnp.where(near, 1.0, d)
+    B_regular = (jnp.exp(-t) - jnp.exp(-s * t)) / d_safe
+    B_term = jnp.where(near, B_limit, B_regular)
+
+    A_term = -jnp.expm1(-(s + 1.0) * t) / (s + 1.0)
+    root = jnp.sqrt(eps)
+    denominator = ((root - 1.0) * jnp.exp(-s * t)
+                   - (root + 1.0))
+    return (A_term + B_term) / denominator
 
 
 def f_I(nu, incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot, output_tau = False):

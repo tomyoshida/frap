@@ -1,5 +1,5 @@
 #########################################################################
-### FRAPPE: Flexible Radial Analysis of ProtoPlanetary disk Emissions ###
+### FRAP: Flexible Radial Analysis of Protoplanetary disks　          ###
 #########################################################################
 
 
@@ -78,6 +78,9 @@ class model:
         self._r_out_rad = jnp.deg2rad( self._r_out/3600 )
 
         self._N_GP = N_GP
+
+
+        self._spacing = spacing
 
         if spacing == 'FB':
             self._j0_zeros = jn_zeros(0, self._N_GP + 1)
@@ -304,6 +307,20 @@ class model:
 
                     obs.V_model = V
 
+            elif obs.kind == 'photometry':
+                # Beam-corrected observed total flux
+                if self._spacing == 'FB':
+                    F = jnp.sum(self._HT_prefactor * _I)
+                elif self._spacing == 'linear':
+                    F = jnp.trapezoid(2.0 * jnp.pi * self._r_GP_rad * _I, self._r_GP_rad)
+
+                F = F * jnp.cos(self._incl) / 1e-23  # Jy
+
+                if dryrun:
+                    return F, _I
+                else:
+                    obs.F_model = F
+
             elif obs.kind == 'radialprofile':
 
                 # Convolve with beam
@@ -428,6 +445,18 @@ class model:
                                     Normal(loc= V_final, scale= _obs._s),
                                     obs = _obs._V
                                 )
+
+                    elif _obs.kind == 'photometry':
+
+                        F_final = _obs.F_model / f_band 
+
+                        numpyro.deterministic(f"F_final_{_obs._name}", F_final)
+
+                        numpyro.sample(
+                                    f"Y_observed_{_obs._name}",
+                                    Normal(loc= F_final, scale= _obs._s),
+                                    obs = _obs._F
+                                )
                         
                     elif _obs.kind == 'radialprofile':
 
@@ -445,6 +474,7 @@ class model:
                                 )
 
             else:
+                # if you do not want to fit the flux uncertainty...
                 
                 for _obs in obs:
 
@@ -454,6 +484,14 @@ class model:
                                     f"Y_observed_{_obs._name}",
                                     Normal(loc= _obs.V_model, scale= _obs._s),
                                     obs = _obs._V
+                                )
+
+                    elif _obs.kind == 'photometry':
+
+                        numpyro.sample(
+                                    f"Y_observed_{_obs._name}",
+                                    Normal(loc= _obs.F_model, scale= _obs._s),
+                                    obs = _obs._F
                                 )
                         
                     elif _obs.kind == 'radialprofile':
@@ -507,6 +545,37 @@ class model:
             
             obs_tmp.append( _obs )
             
+        self._bands.append(band)
+            
+        self._observations[band] = obs_tmp
+        self._s_fs[band] = f_s
+        self._mean_fs[band] = f_mean
+
+
+    def set_photometry( self, band, F, s, f_s, f_mean, nu, Nch):
+        '''set unresolved photometry data for a given band.
+
+        This method allows you to input unresolved photometry data, including observed fluxes, uncertainties, flux scaling factors, and frequencies.
+        
+        Args:
+            band (str): name of the observation band
+            F (float): observed flux in Jy
+            s (float): uncertainty in Jy
+            f_s (float): flux scaling factor standard deviation
+            f_mean (float): mean flux scaling factor
+            nu (array): frequencies in Hz
+            Nch (int): number of channels. Should be consistent with F, s.
+        '''
+
+        obs_tmp = []
+
+        for nch in range(Nch):
+
+            _obs = observation( f'{band}_ch_{nch}', nu[nch], kind='photometry' )
+            _obs._photometry( F[nch], s[nch] )
+            
+            obs_tmp.append( _obs )
+
         self._bands.append(band)
             
         self._observations[band] = obs_tmp
@@ -585,7 +654,6 @@ class model:
                                                                             log10_a_smooth=log10_a_smooth, log10_a_min = jnp.log10(a_dense[0]) )
 
                 
-                
                 _obs.log10_a_dense = log10_a_dense
                 _obs.q_dense = q_dense
                 _obs.log10_k_abs_tot = log10_k_abs_tot
@@ -626,7 +694,6 @@ class model:
         f_latents = parameters
 
 
-
         V_res = {}
         I_res = {}
         
@@ -650,7 +717,7 @@ class model:
         return V_res, I_res
     
 
-    def calc_model_cv( self, MAP_results ):
+    def _calc_model_cv_duplicated( self, MAP_results ):
         '''Compute model visibilities for cross-validation.
         
         This method calculates the model visibilities for cross-validation using the MAP results.
@@ -688,9 +755,57 @@ class model:
 
                 
         return V_final
-    
 
-    def calc_chi2( self, MAP_results ):
+    def calc_chi2(self, MAP_results):
+
+        '''Compute chi-squared for cross-validation.
+                
+            This method calculates the chi-squared value for cross-validation using the MAP results. Note that the MAP estimate should be done with the data splitted from the same dataset.
+        
+            Args:
+                MAP_results (results): results object containing MAP samples and related information.
+                
+            Returns:
+                chi2 (float): chi-squared value for the cross-validation.
+                
+        '''
+        
+        MAP_f = dict(MAP_results.sample['MAP_f'])
+        MAP_g = MAP_results.sample['MAP_g']
+
+        for param_name, profile in self._fixed_parameters.items():
+            MAP_f[param_name] = profile['profile']
+
+        model_values, _ = self.calc_model(MAP_f)
+        chi2 = 0.0
+
+        for band in self._bands:
+            
+            if self._flux_uncert:
+                f_band = jnp.squeeze(MAP_g[f'f_band_{band}'])
+            else:
+                f_band = 1.0
+
+            for obs in self._observations[band]:
+                prediction = model_values[band][obs._name]
+
+                if obs.kind == 'visibility':
+                    prediction = jnp.reshape(prediction, obs._V.shape) / f_band
+                    chi2 += jnp.sum(((obs._V - prediction) / obs._s) ** 2)
+
+                elif obs.kind == 'photometry':
+                    prediction = jnp.reshape(prediction, obs._F.shape) / f_band
+                    chi2 += jnp.sum(((obs._F - prediction) / obs._s) ** 2)
+
+                elif obs.kind == 'radialprofile':
+                    prediction = jnp.reshape(I2Tb(obs._nu, prediction), obs._Tb.shape) / f_band
+                    residual = obs._Tb - prediction
+                    whitened = jax.scipy.linalg.solve_triangular(obs.L_Cov, residual, lower=True)
+                    chi2 += jnp.sum(whitened ** 2)
+
+        return chi2
+
+    def _calc_chi2_duplicated( self, MAP_results ):
         '''Compute chi-squared for cross-validation.
         
         This method calculates the chi-squared value for cross-validation using the MAP results. Note that the MAP estimate should be done with the data splitted from the same dataset.
@@ -703,7 +818,7 @@ class model:
         
         '''
 
-        Vmod = self.calc_model_cv( MAP_results )
+        Vmod = self._calc_model_cv_duplicated( MAP_results )
 
         chi2 = 0.0
         
@@ -777,9 +892,7 @@ class observation:
         Args:
             name (str): name of the observation
             nu (float): frequency in Hz
-            q (array): spatial frequencies in 1/arcsec
-            V (array): observed visibilities in Jy
-            s (array): uncertainties in Jy
+            kind (str, optional): type of observation ('visibility', 'photometry', or 'radialprofile'). Defaults to 'visibility'.
         '''
         self.kind = kind
         self._name = name
@@ -797,26 +910,38 @@ class observation:
         self._V =  jax.device_put(jnp.asarray(V))
         self._s =  jax.device_put(jnp.asarray(s))
 
+    def _photometry(self, F, s):
+        '''set unresolved photometry data
+            
+            Args:
+            F (float): observed flux in Jy
+            s (float): uncertainty in Jy
+        '''
+        self._F =  jax.device_put(jnp.asarray(F))
+        self._s =  jax.device_put(jnp.asarray(s))
+
     def _radialprofile( self, r, Tb, FWHM, Cov):
+        '''set radial profile data [experimental]
+            
+        Args:
+            r (array): radial distances in arcsec
+            Tb (array): brightness temperatures in K
+            FWHM (float): full width at half maximum of the beam in arcsec
+            Cov (array): covariance matrix
+        '''
 
         self._r = jax.device_put(jnp.asarray(r))
         self._Tb = jax.device_put(jnp.asarray(Tb))
-        #self._s = jax.device_put(jnp.asarray(s))
         self._FWHM = FWHM
 
 
         ## Covariance matrix
         sigma_beam = FWHM / (2 * jnp.sqrt(2 * jnp.log(2)))
-                    
-        #dist_sq = (r[:, None] - r[None, :])**2
-                    
-        # R_dist = jnp.exp(-dist_sq / (4 * sigma_beam**2))
         
 
         self.Cov = Cov #s[:, None] * R_dist * s[None, :]
                     
         
-        #self.Cov += jnp.eye(self.Cov.shape[0]) * 1e-6
 
         self.L_Cov = jnp.linalg.cholesky(self.Cov)
 
@@ -990,7 +1115,7 @@ class inference:
         self.delta_medians = {}
         for param_name, priors in self.model._free_parameters.items():
             if priors['GP'] == False:
-                self.delta_medians[param_name] = map_estimates[param_name]
+                self.delta_medians[param_name] = map_estimates[param_name][0,0]
             else:
                 g_predictions = map_estimates[f'g_{param_name}']
                 
