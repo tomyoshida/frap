@@ -394,41 +394,26 @@ class model:
             if self._flux_uncert:
 
                 
-                '''    
-                _g_f_band = numpyro.sample(
-                            f"g_f_scale_{band}",
-                            TruncatedNormal(
-                                loc=0,
-                                scale = 1.0,
-                                low= -self._s_fs_max_sigma[band],
-                                high= self._s_fs_max_sigma[band]
-                            )
-                        )
+                if self._mean_fs[band] is None or self._s_fs[band] is None:
+                    # sampling from the normal dist
+                    _g_f_band = numpyro.sample(
+                        f"g_f_scale_{band}",
+                        Normal(0, 1)
+                    )
 
-                '''
-
-                '''        
-                f_band = sigmoid_transform(
-                    _g_f_band,
-                    min_val= 1.0 - 3*self._s_fs[band], 
-                    max_val= 1.0 + 3*self._s_fs[band]
-                )
-                '''
-                # f_band = 1.0 + _g_f_band*self._s_fs[band]
+                    # change it to log normal dist
+                    # f_band = exp(0 + 0.1 * standard_normal)
+                    f_band = jnp.exp( jnp.log(self._mean_fs[band]) + _g_f_band * self._s_fs[band])
 
 
-                # sampling from the normal dist
-                _g_f_band = numpyro.sample(
-                    f"g_f_scale_{band}",
-                    Normal(0, 1)
-                )
+                    numpyro.deterministic(f"f_band_{band}", f_band)
 
-                # change it to log normal dist
-                # f_band = exp(0 + 0.1 * standard_normal)
-                f_band = jnp.exp( jnp.log(self._mean_fs[band]) + _g_f_band * self._s_fs[band])
+                else:
+                    # this is only for photometry, where the flux scaling factor is fixed to 1.0 and no channel correlated uncertainty is considered.
 
+                    f_band = 1.0
 
-                numpyro.deterministic(f"f_band_{band}", f_band)
+                    numpyro.deterministic(f"f_band_{band}", 1.0)
 
                 for _obs in obs:
 
@@ -448,7 +433,8 @@ class model:
 
                     elif _obs.kind == 'photometry':
 
-                        F_final = _obs.F_model / f_band 
+                        # For photometry, the flux is not scaled by f_band, as it should be independent.
+                        F_final = _obs.F_model
 
                         numpyro.deterministic(f"F_final_{_obs._name}", F_final)
 
@@ -552,24 +538,24 @@ class model:
         self._mean_fs[band] = f_mean
 
 
-    def set_photometry( self, band, F, s, f_s, f_mean, nu, Nch):
+
+    def set_photometry( self, band, F, s, nu):
         '''set unresolved photometry data for a given band.
 
         This method allows you to input unresolved photometry data, including observed fluxes, uncertainties, flux scaling factors, and frequencies.
-        
+        The data should be provided as arrays for each channel.
+        Assumes that the uncertainties are independent across channels.
+
         Args:
-            band (str): name of the observation band
-            F (float): observed flux in Jy
-            s (float): uncertainty in Jy
-            f_s (float): flux scaling factor standard deviation
-            f_mean (float): mean flux scaling factor
+            band (str): name of the observation band or telescope (just to identify the data)
+            F (array): observed flux in Jy
+            s (array): uncertainty in Jy
             nu (array): frequencies in Hz
-            Nch (int): number of channels. Should be consistent with F, s.
         '''
 
         obs_tmp = []
 
-        for nch in range(Nch):
+        for nch in range(len(nu)):
 
             _obs = observation( f'{band}_ch_{nch}', nu[nch], kind='photometry' )
             _obs._photometry( F[nch], s[nch] )
@@ -579,8 +565,8 @@ class model:
         self._bands.append(band)
             
         self._observations[band] = obs_tmp
-        self._s_fs[band] = f_s
-        self._mean_fs[band] = f_mean
+        self._s_fs[band] = 0.0
+        self._mean_fs[band] = 1.0
 
     def set_radialprofile(  self, band, r, Tb, f_s, f_mean, nu, Nch, FWHM, Cov): 
 
