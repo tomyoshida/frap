@@ -316,6 +316,10 @@ class model:
 
                 F = F * jnp.cos(self._incl) / 1e-23  # Jy
 
+                if self._userdef_vis_model is not None:
+                    F = self._userdef_vis_model(jnp.atleast_1d(F), obs, f_latents )[0] # this is for the total flux, so it is ok...
+
+
                 if dryrun:
                     return F, _I
                 else:
@@ -567,6 +571,7 @@ class model:
         self._observations[band] = obs_tmp
         self._s_fs[band] = 0.0
         self._mean_fs[band] = 1.0
+        
 
     def set_radialprofile(  self, band, r, Tb, f_s, f_mean, nu, Nch, FWHM, Cov): 
 
@@ -905,6 +910,7 @@ class observation:
         '''
         self._F =  jax.device_put(jnp.asarray(F))
         self._s =  jax.device_put(jnp.asarray(s))
+        self._q = jnp.zeros(1) # this is only for the user_def model (if it takes q dependence)
 
     def _radialprofile( self, r, Tb, FWHM, Cov):
         '''set radial profile data [experimental]
