@@ -395,25 +395,25 @@ class model:
 
                 
                 if self._mean_fs[band] is None or self._s_fs[band] is None:
+                    # this is only for photometry, where the flux scaling factor is fixed to 1.0 and no channel correlated uncertainty is considered.
+                    f_band = 1.0
+                    numpyro.deterministic(f"f_band_{band}", 1.0)
+
+                else:
+                    
                     # sampling from the normal dist
                     _g_f_band = numpyro.sample(
-                        f"g_f_scale_{band}",
-                        Normal(0, 1)
-                    )
-
+                                            f"g_f_scale_{band}",
+                                            Normal(0, 1)
+                                        )
+                    
                     # change it to log normal dist
                     # f_band = exp(0 + 0.1 * standard_normal)
                     f_band = jnp.exp( jnp.log(self._mean_fs[band]) + _g_f_band * self._s_fs[band])
-
-
+                    
                     numpyro.deterministic(f"f_band_{band}", f_band)
 
-                else:
-                    # this is only for photometry, where the flux scaling factor is fixed to 1.0 and no channel correlated uncertainty is considered.
-
-                    f_band = 1.0
-
-                    numpyro.deterministic(f"f_band_{band}", 1.0)
+                    
 
                 for _obs in obs:
 
