@@ -63,7 +63,7 @@ class model:
             pa (float) : position angle in degrees. Only used for primary beam correction.
             r_out (float): outer radius in arcseconds
             N_GP (int): number of Gaussian process points
-            intensity_function (str, or callable, optional): intensity function to use. Defaults to 'SL20' (Sierra & Lizano 2020). if callable, it should take (nu, incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot) as arguments and return intensity.
+            intensity_function (str or callable, optional): 'SL20' (default) or a user-defined function with signature (obs, incl, f_latents, output_tau). The function should return intensity in cgs units, or optical depth when output_tau=True.
             userdef_vis_model (function, optional): user-defined visibility model function. Defaults to None. The function should take (V, obs, f_latents) as arguments and return modified V.
             flux_uncert (bool, optional): whether to include flux uncertainty. Defaults to True.
             jitter (float, optional): jitter value for numerical stability. Defaults to 1e-6.
@@ -115,8 +115,13 @@ class model:
         self._mean_fs = {}
         self._bands = []
 
-        self._intensity_function = intensity_function
-        
+        if intensity_function == 'SL20':
+            self._intensity_function = f_I_SL20
+        elif callable(intensity_function):
+            self._intensity_function = intensity_function
+        else:
+            raise ValueError("intensity_function must be 'SL20' or a callable")
+                
         self._userdef_vis_model = userdef_vis_model
 
         self._flux_uncert = flux_uncert
@@ -156,14 +161,8 @@ class model:
         ]
 
 
-        lines.extend([
-            '',
-            '[Emission]',
-            f'intensity function : {callback_name(self._intensity_function)}',
-            f'user visibility   : {callback_name(self._userdef_vis_model)}',
-        ])
 
-        if self._intensity_function is not f_I:
+        if callable(self._intensity_function):
 
             lines.extend([
                 '',
@@ -197,14 +196,14 @@ class model:
 
                 lines.append(f'    [{band}] ({obs.kind})')
 
-                attrs = {'nu': obs.nu, **vars(obs)}
-                attrs.pop('_nu', None)
+                attrs = {'nu': obs.nu}
 
-                names = sorted(attrs, key=lambda name: (name.startswith('_'), name))
+                attrs.update({
+                    name: value for name, value in vars(obs).items()
+                    if not name.startswith('_')
+                })
 
-                for name in names:
-
-                    value = attrs[name]
+                for name, value in sorted(attrs.items()):
 
                     if callable(value):
                         info = 'callable'
@@ -276,7 +275,17 @@ class model:
 
             frequencies = np.asarray([float(obs._nu) for obs in observations]) / 1e9
 
-            
+            data_attrs = {
+                'visibility': '_V',
+                'photometry': '_F',
+                'radialprofile': '_Tb',
+            }
+
+            n_data = sum(
+                np.size(getattr(obs, data_attrs[obs.kind]))
+                for obs in observations
+            )
+
             n_opacity = sum(
                 hasattr(obs, 'log10_k_abs_tot_itp')
                 for obs in observations
@@ -448,23 +457,7 @@ class model:
         dryrun: boolean, if True, return intermediate results for debugging
         '''
 
-        Sigma_d = 10**( f_latents['log10_Sigma_d'] )
-        T = 10**( f_latents['log10_T'] )
-        
-        q = f_latents['q']
-        log10_a_max = f_latents['log10_a_max']
-
-        k_abs_tot = 10**obs.log10_k_abs_tot_itp( (log10_a_max, q) )
-        k_sca_eff_tot = 10**obs.log10_k_sca_eff_tot_itp( (log10_a_max, q) )
-        
-        if self._intensity_function == 'SL20':
-
-            _I = f_I(obs._nu, self._incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot, output_tau)
-
-        else:
-
-            _I = self._intensity_function(obs, self._incl, f_latents, output_tau)
-
+        _I = self._intensity_function(obs, self._incl, f_latents, output_tau)
             
         if output_tau:
 

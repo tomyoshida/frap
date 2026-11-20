@@ -197,6 +197,7 @@ def F(tau, omega):
 
 def f_I(nu, incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot, output_tau = False):
     '''
+    !!!duplicated function, consider using f_I_SL20 instead.!!!
     Calculate the intensity I(nu) using radiative transfer with scattering.
     nu: jnp.ndarray or float, frequency in Hz
     incl: jnp.ndarray or float, inclination angle in radians
@@ -219,6 +220,39 @@ def f_I(nu, incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot, output_tau = False):
     if output_tau:
         return tau
 
+    else:
+        return B(nu, T) * (  1 - jnp.exp( -tau/(1-omega) ) + omega*F(tau, omega)  )
+
+
+def f_I_SL20(obs, incl, params, output_tau=False):
+    '''
+    Calculate the intensity I(nu) using the SL20 model.
+    obs: Observation object
+    incl: inclination angle in radians
+    params: dictionary of latent variables
+    output_tau: boolean, if True, return optical depth instead of intensity
+    '''
+
+
+    nu = obs.nu
+
+    Sigma_d = 10**params['log10_Sigma_d']
+    T = 10**params['log10_T']
+
+    q = params['q']
+    log10_a_max = params['log10_a_max']
+
+    ka = 10**obs.log10_k_abs_tot_itp((log10_a_max, q))
+    ks = 10**obs.log10_k_sca_eff_tot_itp((log10_a_max, q))
+
+    chi = ka + ks
+    omega = ks / chi
+        
+    tau = ka * Sigma_d / jnp.cos(incl)
+    
+    if output_tau:
+        return tau
+    
     else:
         return B(nu, T) * (  1 - jnp.exp( -tau/(1-omega) ) + omega*F(tau, omega)  )
 
