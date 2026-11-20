@@ -132,7 +132,10 @@ class model:
 
         self._opacity_config = None
 
-
+    @property
+    def R(self):
+        """Radial grid in arcseconds."""
+        return self._r_GP
 
     def summary(self, file=None, verbose=False):
         """Print and return a summary of the FRAP model."""
