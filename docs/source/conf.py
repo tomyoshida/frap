@@ -35,6 +35,7 @@ googleanalytics_enabled = True
 
 autoapi_type = 'python'
 autoapi_dirs = ['../../frap'] 
+autoapi_python_class_content = 'both'
 
 nbsphinx_execute = 'never'
 
