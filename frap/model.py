@@ -37,7 +37,7 @@ from scipy.special import j0 as J0
 from scipy.special import j1 as J1
 from scipy.special import jn_zeros
 
-
+import inspect
 
 from jax.debug import print as jax_print
 
@@ -614,7 +614,17 @@ class model:
         dryrun: boolean, if True, return intermediate results for debugging
         '''
 
-        _I = self._intensity_function(obs, self._incl, f_latents, output_tau)
+        func = self._intensity_function
+
+        params = inspect.signature(func).parameters
+
+        if 'output_tau' in params:
+            _I = func(obs, self._incl, f_latents, output_tau=output_tau)
+        else:
+            if output_tau:
+                raise NotImplementedError('Optical depth is not supported by this intensity function.')
+
+            _I = func(obs, self._incl, f_latents)
             
         if output_tau:
 
