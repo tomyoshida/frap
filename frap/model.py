@@ -55,7 +55,7 @@ class model:
         set_opacity: method to set dust opacity model
     '''
 
-    def __init__(self, incl, r_out, N_GP,  pa = 0.0, spacing = 'FB', r_in = None, userdef_vis_model = None, flux_uncert = True, jitter=1e-4, hyperparameters_fixed=True):
+    def __init__(self, incl, r_out, N_GP,  pa = 0.0, spacing = 'FB', r_in = None, intensity_function = 'SL20', userdef_vis_model = None, flux_uncert = True, jitter=1e-4, hyperparameters_fixed=True):
         '''initialize the model
 
         Args:
@@ -63,6 +63,7 @@ class model:
             pa (float) : position angle in degrees. Only used for primary beam correction.
             r_out (float): outer radius in arcseconds
             N_GP (int): number of Gaussian process points
+            intensity_function (str, or callable, optional): intensity function to use. Defaults to 'SL20' (Sierra & Lizano 2020). if callable, it should take (nu, incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot) as arguments and return intensity.
             userdef_vis_model (function, optional): user-defined visibility model function. Defaults to None. The function should take (V, obs, f_latents) as arguments and return modified V.
             flux_uncert (bool, optional): whether to include flux uncertainty. Defaults to True.
             jitter (float, optional): jitter value for numerical stability. Defaults to 1e-6.
@@ -114,14 +115,188 @@ class model:
         self._mean_fs = {}
         self._bands = []
 
-
+        self._intensity_function = intensity_function
+        
         self._userdef_vis_model = userdef_vis_model
 
         self._flux_uncert = flux_uncert
 
         self._hyperparameters_fixed = hyperparameters_fixed
 
-                
+        self._opacity_config = None
+
+              
+    def summary(self, file=None):
+        """Print and return a summary of the model settings."""
+
+        def fmt(x):
+            return np.array2string(np.asarray(x), precision=4, separator=', ', threshold=8)
+
+        def callback_name(func):
+            if func is None:
+                return 'None'
+            return getattr(func, '__qualname__', getattr(func, '__name__', repr(func)))
+
+        lines = [
+            'FRAP model summary',
+            '==================',
+            '[Geometry / numerical grid]',
+            f'inclination       : {np.rad2deg(self._incl):.4g} deg',
+            f'position angle    : {np.rad2deg(self._pa):.4g} deg',
+            f'r_out             : {self._r_out:.4g} arcsec',
+            f'r grid            : {self._spacing}, N_GP={self._N_GP}',
+            f'r grid range      : {float(self._r_GP[0]):.4g} to {float(self._r_GP[-1]):.4g} arcsec',
+            f'jitter            : {self._jitter:.4g}',
+            f'GP hyperparameters fixed : {self._hyperparameters_fixed}',
+            f'flux uncertainty  : {self._flux_uncert}',
+            '',
+            '[Emission]',
+            f'intensity function : {callback_name(self._intensity_function)}',
+            f'user visibility    : {callback_name(self._userdef_vis_model)}',
+        ]
+
+
+        lines.extend([
+            '',
+            '[Emission]',
+            f'intensity function : {callback_name(self._intensity_function)}',
+            f'user visibility   : {callback_name(self._userdef_vis_model)}',
+        ])
+
+        if self._intensity_function is not f_I:
+
+            lines.extend([
+                '',
+                '[User-defined intensity function]',
+                '  Signature: intensity_function(obs, incl, f_latents, output_tau)',
+                '',
+                '  incl       : inclination [rad]',
+                '  output_tau : bool (True: return optical depth)',
+                '',
+                '  Available parameters:',
+            ])
+
+            for name, p in self._free_parameters.items():
+                shape = f'({self._N_GP},)' if p['GP'] else 'scalar'
+                lines.append(f"    f_latents['{name}'] : free, shape={shape}")
+
+            for name, p in self._fixed_parameters.items():
+                shape = np.shape(p['profile'])
+                lines.append(f"    f_latents['{name}'] : fixed, shape={shape}")
+
+            lines.extend(['', '  Available observation attributes:'])
+
+            for band in self._bands:
+
+                observations = self._observations[band]
+
+                if not observations:
+                    continue
+
+                obs = observations[0]
+
+                lines.append(f'    [{band}] ({obs.kind})')
+
+                attrs = {'nu': obs.nu, **vars(obs)}
+                attrs.pop('_nu', None)
+
+                names = sorted(attrs, key=lambda name: (name.startswith('_'), name))
+
+                for name in names:
+
+                    value = attrs[name]
+
+                    if callable(value):
+                        info = 'callable'
+                    elif hasattr(value, 'shape'):
+                        info = f'shape={value.shape}'
+                    else:
+                        info = repr(value)
+
+                    lines.append(f'      obs.{name:<30}: {info}')
+
+
+        if self._opacity_config is None:
+            lines.append('opacity           : not configured')
+        else:
+            lines.append('opacity           : configured')
+            for key, value in self._opacity_config.items():
+                lines.append(f'  {key:<17}: {value}')
+
+        lines.extend(['', '[Free parameters]'])
+
+        n_latents = 0
+
+        if not self._free_parameters:
+            lines.append('  (none)')
+
+        for name, p in self._free_parameters.items():
+
+            if p['GP']:
+                n_latents += self._N_GP
+                lines.append(
+                    f'  {name}: GP, bounds=({p["f_min"]}, {p["f_max"]}), '
+                    f'mean={p["g_mean"]}, variance={fmt(p["g_variance"])}, '
+                    f'lengthscale={fmt(p["g_lengthscale"])} arcsec'
+                )
+            else:
+                n_latents += 1
+                lines.append(
+                    f'  {name}: scalar, Normal(mean={p["f_mean"]}, std={p["f_s"]})'
+                )
+
+        lines.append(f'  free latent variables (excluding nuisance): {n_latents}')
+
+        lines.extend(['', '[Fixed parameters]'])
+
+        if not self._fixed_parameters:
+            lines.append('  (none)')
+
+        for name, p in self._fixed_parameters.items():
+
+            values = np.asarray(p['profile'])
+
+            if values.ndim == 0:
+                detail = f'value={values.item()}'
+            else:
+                detail = f'shape={values.shape}, min={float(np.min(values)):.4g}, max={float(np.max(values)):.4g}'
+
+            lines.append(f'  {name}: {detail}')
+
+        lines.extend(['', '[Observations]'])
+
+        if not self._bands:
+            lines.append('  (none)')
+
+        for band in self._bands:
+
+            observations = self._observations[band]
+
+            kinds = ', '.join(sorted({obs.kind for obs in observations}))
+
+            frequencies = np.asarray([float(obs._nu) for obs in observations]) / 1e9
+
+            
+            n_opacity = sum(
+                hasattr(obs, 'log10_k_abs_tot_itp')
+                for obs in observations
+            )
+
+            lines.append(
+                f'  {band}: {kinds}, n_channels={len(observations)}, n_data={n_data}'
+            )
+
+            lines.append(
+                f'    frequency={frequencies.min():.6g}--{frequencies.max():.6g} GHz, '
+                f'flux_scale_mean={self._mean_fs[band]}, flux_scale_std={self._s_fs[band]}, '
+                f'opacity_tables={n_opacity}/{len(observations)}'
+            )
+
+        text = '\n'.join(lines)
+
+        print(text, file=file)
+
+        return text 
 
         
     def _set_latent_params( self, calc_cond_num = False ):
@@ -282,9 +457,15 @@ class model:
         k_abs_tot = 10**obs.log10_k_abs_tot_itp( (log10_a_max, q) )
         k_sca_eff_tot = 10**obs.log10_k_sca_eff_tot_itp( (log10_a_max, q) )
         
-        _I = f_I(obs._nu, self._incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot, output_tau )
+        if self._intensity_function == 'SL20':
 
+            _I = f_I(obs._nu, self._incl, T, Sigma_d, k_abs_tot, k_sca_eff_tot, output_tau)
 
+        else:
+
+            _I = self._intensity_function(obs, self._incl, f_latents, output_tau)
+
+            
         if output_tau:
 
             return _I
@@ -631,7 +812,6 @@ class model:
         # to allow the opacity model to be flexible, but it did not work well probably because of the large correlation between parameters.
         # We therefore pre-calculate interpolators for each observation here.
 
-        
 
         for band in self._bands:
             
@@ -666,6 +846,15 @@ class model:
                                             bounds_error=False,
                                             fill_value=None
                                         )
+
+        self._opacity_config = {
+            'Na': Na,
+            'Nq': Nq,
+            'smooth': smooth,
+            'log10_a_smooth': log10_a_smooth,
+            'a_min': a_min,
+            'a_max': a_max,
+        }
                 
 
     def calc_model( self, parameters ):
@@ -888,6 +1077,11 @@ class observation:
         self.kind = kind
         self._name = name
         self._nu = nu
+
+    @property
+    def nu(self):
+        """Observing frequency [Hz]."""
+        return self._nu
 
     def _visibility(self, q, V, s):
         '''set visibility data
